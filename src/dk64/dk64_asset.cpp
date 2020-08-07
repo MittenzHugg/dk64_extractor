@@ -20,9 +20,10 @@
 *   along with Mr.Patcher.  If not, see <https://www.gnu.org/licenses/>.
 *************************************************************************/
 #include "dk64_asset.h"
+#include <iostream>
 
 //libdeflate_compressor* dk64_asset::comper = libdeflate_alloc_compressor(12); 			//TODO: relax compression?
-//libdeflate_decompressor* dk64_asset::decomper = libdeflate_alloc_decompressor();
+libdeflate_decompressor* dk64_asset::decomper = libdeflate_alloc_decompressor();
 
 void dk64_asset::_comp_method() const
 {
@@ -55,7 +56,7 @@ void dk64_asset::_comp_method() const
 }
 
 void dk64_asset::_decomp_method() const {
-	/*uint8_t* tmpBuffer = (uint8_t*)malloc(0x400000);
+	uint8_t* tmpBuffer = (uint8_t*)malloc(0x800000);
 	if (tmpBuffer == nullptr)
 		throw "Bad memory allocation.";
 	size_t tmpCompSize = _comp_buffer->size();
@@ -71,7 +72,7 @@ void dk64_asset::_decomp_method() const {
 
 	//decompress Code
 	enum libdeflate_result decompResult = libdeflate_deflate_decompress_ex(decomper, _comp_buffer->begin() + comp_begin, _comp_buffer->size() - comp_begin
-		, tmpBuffer, 0x400000, &tmpCompSize, &tmpDecompSize);
+		, tmpBuffer, 0x800000, &tmpCompSize, &tmpDecompSize);
 	//decompress data
 	tmpCompSize += comp_begin;
 	tmpBuffer = (uint8_t*)realloc(tmpBuffer, tmpDecompSize);
@@ -80,5 +81,13 @@ void dk64_asset::_decomp_method() const {
 	_decomp_buffer = new n64_span(tmpBuffer, tmpDecompSize);
 	_decomp_own = true;
 	return;
-	*/
+	
+}
+
+std::vector<const dk64_asset*> dk64_asset_section::parse(const n64_span& table){
+	//seperate asset bins from asset table
+	for(int i = 0; i < 64; i++){
+		std::cout << std::hex << 0x101C50 + (i*4) << ": " << std::hex << table.get<u32>(i*4) << std::endl;
+	} 
+	return std::vector<const dk64_asset*>();
 }

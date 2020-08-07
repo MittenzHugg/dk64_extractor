@@ -22,7 +22,7 @@
 
 #pragma once
 #include "../n64/n64_file.h"
-//#include "libdeflate.h"
+#include "libdeflate.h"
 #include <vector>
 
 class dk64_asset :
@@ -38,7 +38,7 @@ public:
 
 private:
 	//static libdeflate_compressor* comper;
-	//static libdeflate_decompressor* decomper;
+	static libdeflate_decompressor* decomper;
 
 	void _comp_method() const override;
 	void _decomp_method() const override;
@@ -46,6 +46,6 @@ private:
 
 class dk64_asset_section {
 public: //helper functions for parsing/building entire asset section
-	//TODO static std::vector<const dk64_asset*> parse(const n64_span&);
+	static std::vector<const dk64_asset*> parse(const n64_span&);
 	//TODO static const n64_span& build(std::vector<const dk64_asset*>& assets);
 };
