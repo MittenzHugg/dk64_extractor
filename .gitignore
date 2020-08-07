@@ -1,0 +1,15 @@
+# Folders #
+###########
+rombase/
+.vscode/
+
+# Compiled Source #
+###################
+*.o
+dk64_extractor
+
+# N64 ROMS #
+############
+*.z64
+*.n64
+*.v64
