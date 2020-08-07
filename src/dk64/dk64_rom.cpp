@@ -100,7 +100,7 @@ void dk64_rom::_init(void)
 	//	1010FD - Asset File(JETPAC Minigame)*/
 	///*-Main Pointer Table -
 	//	Initial Address : 0x101C50*/
-	_asset_table = buffer.slice(0xF908, 0x113F0 - 0xF908);
+	_asset_table = buffer.slice(0x101C50, 0x119363C - 0x101C50);
 	dk64_asset_section::parse(_asset_table);
 	///*Textures for Test Map(how is size determined from ROM ? )
 	//	119363C
