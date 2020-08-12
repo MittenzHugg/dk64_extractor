@@ -29,14 +29,20 @@ class dk64_asset :
 	public n64_file
 {
 public:
-	dk64_asset() = default;
+	dk64_asset(){};
 	//TODO dk64_asset(dk64_asset&& src); //move constructor
 	//TODO dk64_asset(const dk64_asset& src); //copy constructor
 	//dk64_asset(u32 indx, u32 offset, u16 type, const n64_span& data, u16 compressed = true);
+	dk64_asset(u32 index, u32 offset, u16 type, const n64_span& data, bool compressed = true, bool referenced = false);
 
 	//TODO dk64_asset& operator = (const dk64_asset& other) {}; //assignment operator
 
 private:
+	u8 _type;
+	u32 _index;
+	u32 _offset;
+	bool _refer;
+
 	//static libdeflate_compressor* comper;
 	static libdeflate_decompressor* decomper;
 

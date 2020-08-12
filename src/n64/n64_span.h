@@ -32,6 +32,9 @@
 #pragma once
 #include <type_traits>
 #include <cstdlib>
+#include <vector>
+#include <algorithm>
+#include <numeric>
 #include "simpTypes.h"
 
 //big endian helper struct
@@ -80,9 +83,25 @@ public:
 
 	//return fundemental types from span and advances the offset to next value
 	template <typename T> 
-	T seq_get(u32& offset) const {
+	inline T seq_get(u32& offset) const {
 		T ret_val = n64_be<T>::get(*this, offset);
 		offset += sizeof(T);
+		return ret_val;
+	}
+
+	template <typename T>
+	std::vector<T> to_vector(void) const {
+		size_t elem_size = sizeof(T);
+		u32 elem_cnt = size()/elem_size;
+
+		std::vector<u32> indx(elem_cnt);
+		std::iota(indx.begin(),indx.end(),0);
+
+		std::vector<T> ret_val(elem_cnt);
+
+		std::transform(indx.begin(), indx.end(), ret_val.begin(), 
+		[&](u32 i)-> T {return this->get<T>(i*elem_size);});
+
 		return ret_val;
 	}
 

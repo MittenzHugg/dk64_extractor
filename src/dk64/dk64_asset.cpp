@@ -21,14 +21,20 @@
 *************************************************************************/
 #include "dk64_asset.h"
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 //libdeflate_compressor* dk64_asset::comper = libdeflate_alloc_compressor(12); 			//TODO: relax compression?
 libdeflate_decompressor* dk64_asset::decomper = libdeflate_alloc_decompressor();
 
-/*dk64_asset::dk64_asset(u32 indx, u32 offset, u16 type, const n64_span& data, u16 compressed = true) 
-: n64_file(data, compressed) {
-
-}*/
+dk64_asset::dk64_asset(u32 index, u32 offset, u16 type, const n64_span& data, bool compressed, bool referenced) 
+: n64_file(data, compressed)
+, _type{type}
+, _index{index}
+, _offset{offset}
+, _refer{referenced}{
+	//initialization stuff
+}
 
 void dk64_asset::_comp_method() const
 {
@@ -91,7 +97,33 @@ void dk64_asset::_decomp_method() const {
 
 std::vector<const dk64_asset*> dk64_asset_section::parse(const n64_span& table){
 	//seperate asset bins from asset table
-	for(int i = 0; i < 32; i++){
+	std::vector<const dk64_asset*> assets = std::vector<const dk64_asset*>();
+
+	std::vector<u32> table_offsets = table.slice(0,0x80).to_vector<u32>();
+	std::vector<u32> type_info = table.slice(0x80, 0x80).to_vector<u32>();
+
+    auto it = std::remove_if(table_offsets.begin(), table_offsets.end(), 
+        [](u32 x)->bool{
+            return (x == 0);
+            }
+        );
+    table_offsets.erase(it, table_offsets.end());
+
+	std::for_each(table_offsets.begin(), table_offsets.end(),
+		[&](u32 offset)-> void {
+			std::cout << "Offset = " << offset << std::endl;
+			u32 first_file = table.get<u32>(offset);
+			std::vector<u32> asset_offset = table.slice(offset, first_file-offset).to_vector<u32>();
+            auto iter = std::unique(asset_offset.begin(), asset_offset.end());
+            asset_offset.erase(iter,asset_offset.end());
+			std::for_each(asset_offset.begin(), asset_offset.end(),
+				[&](u32 ass_off)-> void {
+                    std::cout << "\t asset: " << ass_off << std::endl;
+				}
+			);
+		}
+	);
+	/*for(int i = 0; i < 32; i++){
 		u32 _asset_type_offset = table.get<u32>(i*sizeof(u32));
 		if(_asset_type_offset == 0) break;
 		u32 _next_asset_type_offset = table.get<u32>((i+1)*sizeof(u32));
@@ -100,14 +132,15 @@ std::vector<const dk64_asset*> dk64_asset_section::parse(const n64_span& table){
 		u32 _asset_type_type = table.get<u32>((i+32)*sizeof(u32));
 		
 		
-		std::cout << "Offset = " << _asset_type_offset << std::endl;
+		std::cout << "Offset = " << table_offsets[i] << std::endl;
 		const n64_span _asset_type_span = table.slice(_asset_type_offset, table.get<u32>((i+1)*sizeof(u32)) -  _asset_type_offset);
 		if(_asset_type_offset){
 			std::cout << "Extracting File 0x" << std::hex << (0x101C50 + _asset_type_offset) << std::endl;
-			for(int i_file = 0; i_file < 32; i_file++){
-				std::cout << std::hex << (0x101C50 + _asset_type_offset + i_file*4) << ": " << std::hex << _asset_type_span.get<u32>((i_file*sizeof(u32))) << std::endl;
+			u32 start_file;
+			for(int i_file = 0; (start_file = _asset_type_span.get<u32>((i_file*sizeof(u32)))) < 32; i_file++){
+				std::cout << std::hex << (0x101C50 + _asset_type_offset + i_file*4) << ": " << std::hex << start_file << std::endl;
 			}
 		}
-	} 
+	} */
 	return std::vector<const dk64_asset*>();
 }
