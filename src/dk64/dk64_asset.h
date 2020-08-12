@@ -32,7 +32,7 @@ public:
 	dk64_asset() = default;
 	//TODO dk64_asset(dk64_asset&& src); //move constructor
 	//TODO dk64_asset(const dk64_asset& src); //copy constructor
-	//TODO dk64_asset(u32 indx, u32 offset, u16 compressed, u16 type, const n64_span& data);
+	//dk64_asset(u32 indx, u32 offset, u16 type, const n64_span& data, u16 compressed = true);
 
 	//TODO dk64_asset& operator = (const dk64_asset& other) {}; //assignment operator
 

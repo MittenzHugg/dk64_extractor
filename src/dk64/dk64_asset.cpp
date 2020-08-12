@@ -25,6 +25,11 @@
 //libdeflate_compressor* dk64_asset::comper = libdeflate_alloc_compressor(12); 			//TODO: relax compression?
 libdeflate_decompressor* dk64_asset::decomper = libdeflate_alloc_decompressor();
 
+/*dk64_asset::dk64_asset(u32 indx, u32 offset, u16 type, const n64_span& data, u16 compressed = true) 
+: n64_file(data, compressed) {
+
+}*/
+
 void dk64_asset::_comp_method() const
 {
 	n64_file::_comp_method(); //TMP: this just copies the decomp span ptr to the comp span ptr
@@ -86,8 +91,23 @@ void dk64_asset::_decomp_method() const {
 
 std::vector<const dk64_asset*> dk64_asset_section::parse(const n64_span& table){
 	//seperate asset bins from asset table
-	for(int i = 0; i < 64; i++){
-		std::cout << std::hex << 0x101C50 + (i*4) << ": " << std::hex << table.get<u32>(i*4) << std::endl;
+	for(int i = 0; i < 32; i++){
+		u32 _asset_type_offset = table.get<u32>(i*sizeof(u32));
+		if(_asset_type_offset == 0) break;
+		u32 _next_asset_type_offset = table.get<u32>((i+1)*sizeof(u32));
+		if(_next_asset_type_offset == 0) break;
+
+		u32 _asset_type_type = table.get<u32>((i+32)*sizeof(u32));
+		
+		
+		std::cout << "Offset = " << _asset_type_offset << std::endl;
+		const n64_span _asset_type_span = table.slice(_asset_type_offset, table.get<u32>((i+1)*sizeof(u32)) -  _asset_type_offset);
+		if(_asset_type_offset){
+			std::cout << "Extracting File 0x" << std::hex << (0x101C50 + _asset_type_offset) << std::endl;
+			for(int i_file = 0; i_file < 32; i_file++){
+				std::cout << std::hex << (0x101C50 + _asset_type_offset + i_file*4) << ": " << std::hex << _asset_type_span.get<u32>((i_file*sizeof(u32))) << std::endl;
+			}
+		}
 	} 
 	return std::vector<const dk64_asset*>();
 }
