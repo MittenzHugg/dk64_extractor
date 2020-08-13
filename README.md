@@ -4,5 +4,4 @@
 `dk_extractor </path/to/rom> </binary/export/path/>`
 
 ## Making
-`make`
-If on windows refer to libdeflate build instructions for that submodule.
+`make` will build libdeflate amd make dk_extractor. Tested on linux and cygwin.
