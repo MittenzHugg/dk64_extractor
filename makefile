@@ -1,6 +1,10 @@
-CC = gcc
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+    CC = x86_64-w64-mingw32-gcc
+else
+    CC = gcc
+endif
 CXX = g++
-CXXFLAGS = -Wall -g -std=c++20
+CXXFLAGS = -Wall -g -std=c++2a
 
 OBJ_DIR = build
 N64_DIR = src/n64
@@ -17,10 +21,13 @@ main: make_libdeflate build/dk_extractor.o dk64_rom.o dk64_asset.o n64_file.o n6
 
 clean:
 	rm -rf build/*.o
-	rm dk_extractor
+	rm -f dk_extractor
 
 make_libdeflate:
+	echo $(OS)
+	echo $(CC)
 	cd libdeflate && make CC=$(CC)
+	cp libdeflate/libdeflate.h src/dk64/libdeflate.h
 
 build/.:
 	mkdir -p $@

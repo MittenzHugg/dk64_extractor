@@ -24,7 +24,6 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
-#include <ranges>
 
 //libdeflate_compressor* dk64_asset::comper = libdeflate_alloc_compressor(12); 			//TODO: relax compression?
 libdeflate_decompressor* dk64_asset::decomper = libdeflate_alloc_decompressor();

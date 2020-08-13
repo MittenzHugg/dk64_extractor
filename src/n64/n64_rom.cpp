@@ -28,7 +28,7 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
-#include <execution>
+//#include <execution>
 #include <map>
 #include <iostream>
 

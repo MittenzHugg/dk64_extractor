@@ -34,7 +34,6 @@ public:
 	//TODO dk64_asset(const dk64_asset& src); //copy constructor
 	//dk64_asset(u32 indx, u32 offset, u16 type, const n64_span& data, u16 compressed = true);
 	dk64_asset(u32 type, u32 index, u32 offset, const n64_span& data, bool compressed = true, bool referenced = false);
-	~dk64_asset(){n64_file::~n64_file();};
 	//TODO dk64_asset& operator = (const dk64_asset& other) {}; //assignment operator
 	u32 _offset;
 	u32 _index;
