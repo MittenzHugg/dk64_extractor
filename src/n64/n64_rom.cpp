@@ -143,6 +143,9 @@ n64_rom::n64_rom(char const* fileName)
 		this->gameID = UNKNOWN_GAME;
 		break;
 	}
+	
+	_header = buffer.slice(0, 0x40);
+	_boot = buffer.slice(0x40, 0x1000-0x40);
 	return;
 }
 
@@ -153,6 +156,8 @@ n64_rom::n64_rom(n64_rom&& src)
 	, _hash{src._hash}
 {
 	src._buffer = nullptr;
+	_header = buffer.slice(0, 0x40);
+	_boot = buffer.slice(0x40, 0x1000-0x40);
 }
 
 n64_rom::~n64_rom()

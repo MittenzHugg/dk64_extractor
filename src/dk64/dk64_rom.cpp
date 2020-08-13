@@ -22,6 +22,11 @@
 #include "dk64_rom.h"
 #include "dk64_asset.h"
 #include <utility>
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <string>
+namespace fs = std::filesystem;
 
 dk64_rom::dk64_rom(char* filename)
 	:n64_rom(filename)
@@ -33,7 +38,7 @@ dk64_rom::dk64_rom(char* filename)
 		throw "Not a recognized version of Donkey Kong 64";
 		return;
 	}
-
+	std::cout << "N64 ROM identified as Donkey Kong 64" << std::endl;
 	_init();
 }
 
@@ -55,8 +60,78 @@ dk64_rom::~dk64_rom()
 {
 }
 
+
+
+void dk64_rom::_write_bin(std::string str, const n64_span& span){
+	std::stringstream stream;
+	stream << std::setfill ('0') << std::setw(8) << std::hex << &span[0]-_buffer;
+	std::string bin_str = str + stream.str() + ".bin";
+	//std::cout << bin_str << std::endl;
+	std::fstream of(bin_str, std::ios::out | std::ios::binary);
+	of.write((char*) &span[0], span.size());
+	of.close();
+};
+
+void dk64_rom::_write_bin(std::string str, dk64_asset* asset){
+	
+		std::stringstream stream;
+		stream << std::setfill ('0') << std::setw(8) << std::hex << &asset->compress()[0] -_buffer;
+		std::string bin_str = str + stream.str() + ".bin";
+		//std::cout << bin_str << std::endl;
+		std::fstream of(bin_str, std::ios::out | std::ios::binary);
+	try{
+		asset->decompress();
+		of.write((char*) &(asset->decompress())[0], asset->decompress().size());
+	}
+	catch (char const* s){
+		std::cout << "Error: " << bin_str << ": " << s 
+			<< " Exporting compressed bin" << std::endl;
+		of.close();
+		of.open(str + stream.str() + ".raw.bin");
+		of.write((char*) &(asset->compress())[0], asset->compress().size());
+	}
+	of.close();
+};
+
 void dk64_rom::export_files(char* export_path){
+
+	std::cout << "Exporting ROM to " << export_path << std::endl;
+	fs::create_directory(export_path);
+	std::string x_path(export_path);
+
+	_write_bin(x_path + "/n64_header.", _header);
+
+	_write_bin(x_path + "/n64_boot.", _boot);
+
+	_write_bin(x_path + "/dk64_boot.", _bootcode_span);
+
+	_write_bin(x_path + "/exp_pak_pic.", _exp_pak_pic_span);
+
+	std::cout << "Exporting asm ..." << std::endl;
+	std::cout << "ASM COMING SOON" << std::endl;
+
+	std::cout << "Exporting assets ..." << std::endl;
+	std::string asset_path = std::string(export_path) + "/assets";
+	fs::create_directory(asset_path);
+
+	for(int i = 0; i < 32; i++){
+		std::string path = asset_path + "/" + std::to_string(i);
+		if(std::any_of(_assets.begin(), _assets.end(),[i](dk64_asset* x)->bool{return x->_type == i;})){
+			fs::create_directory(path);
 		
+			std::for_each(_assets.begin(), _assets.end(),
+			[&](dk64_asset* x){
+					if(x->_type == i)
+						_write_bin(path + "/", x);
+				}
+			);
+		}
+
+	}
+	
+	
+	
+
 }
 
 
@@ -100,8 +175,11 @@ void dk64_rom::_init(void)
 	//	1010FD - Asset File(JETPAC Minigame)*/
 	///*-Main Pointer Table -
 	//	Initial Address : 0x101C50*/
-	_asset_table = buffer.slice(0x101C50, 0x119363C - 0x101C50);
-	dk64_asset_section::parse(_asset_table);
+	std::cout << "Finding assets..." << std::endl;
+	_asset_table = buffer.slice(0x101C50, buffer.size() - 0x101C50);
+	_assets = dk64_asset_section::parse(_asset_table);
+	std::cout << std::dec << _assets.size() << " assets found" << std::endl;
+	//_assets = 
 	///*Textures for Test Map(how is size determined from ROM ? )
 	//	119363C
 	//	1193A6E - Test Wall Pallete

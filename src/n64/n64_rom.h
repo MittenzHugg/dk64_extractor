@@ -78,6 +78,8 @@ public:
 
 protected:
 	//FILE* ROMFile;
+	n64_span _header;
+	n64_span _boot;
 	uint8_t* _buffer = nullptr; //TODO make protected
 	u64 _hash = 0;
 };

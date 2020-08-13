@@ -6,8 +6,10 @@
 int main(int argc,  char * argv[]){
 	dk64_rom* dk64Rom;
 	
-	if(argc != 2){
-		std::cout << "Usage: dk_extractor <path_to_dk64_rom>\n";
+
+	
+	if(argc != 3){
+		std::cout << "Usage: dk_extractor path/to/dk64/rom.file path/to/output/\n";
 		return 0;
 	}
 	std::string rom_file = std::string(argv[1]);
@@ -18,7 +20,9 @@ int main(int argc,  char * argv[]){
 	catch (char const* s){
 		std::cout << "Error: " << s << std::endl;
 	}
-	
-	
+	char * export_path = argv[2];
+
+	dk64Rom->export_files(export_path);
+
 	return 0;
 }

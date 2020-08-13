@@ -23,6 +23,7 @@
 #pragma once
 #include "../n64/n64_rom.h"
 #include "../n64/n64_span.h"
+#include "dk64_asset.h"
 
 class dk64_rom :
 	public n64_rom
@@ -32,10 +33,14 @@ public:
 	dk64_rom(n64_rom&& src);
 	~dk64_rom();
 
+	void export_binaries(char* export_path);
 	void export_files(char* export_path);
 
 private:
 	void _init(void);
+
+	void _write_bin(std::string str, const n64_span& span);
+	void _write_bin(std::string str, dk64_asset* asset);
 
 	n64_span _bootcode_span;
 
@@ -45,5 +50,6 @@ private:
 	n64_span _global_asm_data;
 
 	n64_span _asset_table;
+	std::vector<dk64_asset*> _assets = {};
 };
 

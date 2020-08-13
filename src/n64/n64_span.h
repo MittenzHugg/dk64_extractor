@@ -99,10 +99,23 @@ public:
 
 		std::vector<T> ret_val(elem_cnt);
 
-		std::transform(indx.begin(), indx.end(), ret_val.begin(), 
-		[&](u32 i)-> T {return this->get<T>(i*elem_size);});
+		std::transform( indx.begin(), indx.end(), ret_val.begin()
+		, [&](u32 i)-> T { return this->get<T>(i*elem_size); }
+		);
 
 		return ret_val;
+	}
+
+	template <typename T>
+	inline std::vector<T> to_vector(u32 offset) const {
+		return slice(offset, size()-offset).to_vector<T>();
+
+	}
+
+	template <typename T>
+	inline std::vector<T> to_vector(u32 offset, u32 count) const {
+		return slice(offset, count * sizeof(T)).to_vector<T>();
+
 	}
 
 	//write fundemental types to span

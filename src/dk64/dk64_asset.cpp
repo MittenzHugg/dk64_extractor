@@ -23,11 +23,13 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <numeric>
+#include <ranges>
 
 //libdeflate_compressor* dk64_asset::comper = libdeflate_alloc_compressor(12); 			//TODO: relax compression?
 libdeflate_decompressor* dk64_asset::decomper = libdeflate_alloc_decompressor();
 
-dk64_asset::dk64_asset(u32 index, u32 offset, u16 type, const n64_span& data, bool compressed, bool referenced) 
+dk64_asset::dk64_asset(u32 type, u32 index, u32 offset, const n64_span& data, bool compressed, bool referenced) 
 : n64_file(data, compressed)
 , _type{type}
 , _index{index}
@@ -67,80 +69,85 @@ void dk64_asset::_comp_method() const
 }
 
 void dk64_asset::_decomp_method() const {
+	if(_refer){
+		throw "Asset reference.";
+		return;
+	}	
+	if (_comp_buffer->get<u64>() == 0x1F8B080000000000 && _comp_buffer->get<u16>(8) != 0x0203){
+		throw "Unknown File Header.";
+		return;
+	}
+
+	//find start //TODO: WHAT ARE THE values in here 
+	u32 comp_begin = 0x0A;
+	if (_comp_buffer->get<u32>() == 0x1F8B0808) {
+		while (comp_begin < _comp_buffer->size() && _comp_buffer->operator[](comp_begin++) != 0);
+		if(comp_begin >= _comp_buffer->size()){
+			throw "Could not find compression start.";
+		}
+	}
+
+	//std::cout << "Decompressing Asset " << _type << "." << _index << std::endl;
 	uint8_t* tmpBuffer = (uint8_t*)malloc(0x800000);
 	if (tmpBuffer == nullptr)
-		throw "Bad memory allocation.";
+		throw "Bad memory allocation 1.";
 	size_t tmpCompSize = _comp_buffer->size();
 	if (tmpCompSize == 0) { return; }
 	size_t tmpDecompSize;
 
 
-	//find start //TODO: WHAT ARE THE values in here 
-	u32 comp_begin = 0x0A;
-	if (_comp_buffer->get<u32>() == 0x1F8B0808) {
-		while (_comp_buffer->operator[](comp_begin++) != 0);
-	}
+
 
 	//decompress Code
 	enum libdeflate_result decompResult = libdeflate_deflate_decompress_ex(decomper, _comp_buffer->begin() + comp_begin, _comp_buffer->size() - comp_begin
 		, tmpBuffer, 0x800000, &tmpCompSize, &tmpDecompSize);
+	if(decompResult){
+		free(tmpBuffer);	
+		throw "Unknown compression type.";
+		return;
+	}
+	
 	//decompress data
 	tmpCompSize += comp_begin;
 	tmpBuffer = (uint8_t*)realloc(tmpBuffer, tmpDecompSize);
 	if (tmpBuffer == nullptr)
-		throw "Bad memory reallocation.";
+		throw "Bad memory reallocation 2.";
 	_decomp_buffer = new n64_span(tmpBuffer, tmpDecompSize);
 	_decomp_own = true;
 	return;
 	
 }
 
-std::vector<const dk64_asset*> dk64_asset_section::parse(const n64_span& table){
-	//seperate asset bins from asset table
-	std::vector<const dk64_asset*> assets = std::vector<const dk64_asset*>();
+std::vector<dk64_asset*> dk64_asset_section::parse(const n64_span& section){
+	//seperate asset bins from asset section
+	auto assets = std::vector<dk64_asset*>();
 
-	std::vector<u32> table_offsets = table.slice(0,0x80).to_vector<u32>();
-	std::vector<u32> type_info = table.slice(0x80, 0x80).to_vector<u32>();
+	std::vector<u32> type_offsets = section.to_vector<u32>(0,32);
+	//std::vector<u32> type_info = section.to_vector<u32>(0x80, 32);
 
-    auto it = std::remove_if(table_offsets.begin(), table_offsets.end(), 
-        [](u32 x)->bool{
-            return (x == 0);
-            }
-        );
-    table_offsets.erase(it, table_offsets.end());
-
-	std::for_each(table_offsets.begin(), table_offsets.end(),
-		[&](u32 offset)-> void {
-			std::cout << "Offset = " << offset << std::endl;
-			u32 first_file = table.get<u32>(offset);
-			std::vector<u32> asset_offset = table.slice(offset, first_file-offset).to_vector<u32>();
-            auto iter = std::unique(asset_offset.begin(), asset_offset.end());
-            asset_offset.erase(iter,asset_offset.end());
-			std::for_each(asset_offset.begin(), asset_offset.end(),
-				[&](u32 ass_off)-> void {
-                    std::cout << "\t asset: " << ass_off << std::endl;
-				}
-			);
-		}
+	auto type_end = std::remove_if(type_offsets.begin(), type_offsets.end(), 
+		[](u32 x)->bool{return (x == 0);}
 	);
-	/*for(int i = 0; i < 32; i++){
-		u32 _asset_type_offset = table.get<u32>(i*sizeof(u32));
-		if(_asset_type_offset == 0) break;
-		u32 _next_asset_type_offset = table.get<u32>((i+1)*sizeof(u32));
-		if(_next_asset_type_offset == 0) break;
+	type_offsets.erase(type_end, type_offsets.end());
 
-		u32 _asset_type_type = table.get<u32>((i+32)*sizeof(u32));
+	//for(u32 type = 0; type < 4; type++ ){
+	for(u32 type = 0; type < type_offsets.size(); type++ ){
+		u32 offset = type_offsets[type];
 		
+		u32 first_file = section.get<u32>(offset) & 0x0FFFFFFF;
+		std::vector<u32> file_offsets = section.slice(offset, first_file-offset).to_vector<u32>();
+		auto file_list_end = std::find_first_of(file_offsets.begin(), file_offsets.end(),file_offsets.end(), file_offsets.end());
+		file_offsets.erase(file_list_end, file_offsets.end());
 		
-		std::cout << "Offset = " << table_offsets[i] << std::endl;
-		const n64_span _asset_type_span = table.slice(_asset_type_offset, table.get<u32>((i+1)*sizeof(u32)) -  _asset_type_offset);
-		if(_asset_type_offset){
-			std::cout << "Extracting File 0x" << std::hex << (0x101C50 + _asset_type_offset) << std::endl;
-			u32 start_file;
-			for(int i_file = 0; (start_file = _asset_type_span.get<u32>((i_file*sizeof(u32)))) < 32; i_file++){
-				std::cout << std::hex << (0x101C50 + _asset_type_offset + i_file*4) << ": " << std::hex << start_file << std::endl;
+		for(u32 iFile = 0; (iFile < file_offsets.size()-1); iFile++){
+			u32 curr_offset = file_offsets[iFile] & 0x0FFFFFFF;
+			bool ref = file_offsets[iFile] & 0x80000000;
+			u32 curr_size = (file_offsets[iFile + 1] & 0x0FFFFFFF) - curr_offset;
+			if(file_offsets[iFile] != file_offsets[iFile + 1]){
+				assets.push_back(new dk64_asset(type, iFile, curr_offset
+								 	 , section.slice(curr_offset, curr_size),true, ref));
 			}
 		}
-	} */
-	return std::vector<const dk64_asset*>();
+	}
+	return assets;
 }

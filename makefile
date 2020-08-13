@@ -12,11 +12,12 @@ OBJS = $(addprefix build/,$(pathsubst %.c, %.o, $(SRCS)))
 
 
 
-main: make_libdeflate $(OBJS) dk64_rom.o dk64_asset.o n64_rom.o n64_rom.o md5.o
+main: make_libdeflate build/dk_extractor.o dk64_rom.o dk64_asset.o n64_file.o n64_rom.o md5.o
 	$(CXX) $(CXXFLAGS) -o dk_extractor $(OBJ_DIR)/dk_extractor.o $(OBJ_DIR)/dk64_rom.o $(OBJ_DIR)/dk64_asset.o $(OBJ_DIR)/n64_file.o $(OBJ_DIR)/n64_rom.o $(OBJ_DIR)/md5.o libdeflate/libdeflate.a
 
 clean:
-	rm -rf *.o
+	rm -rf build/*.o
+	rm dk_extractor
 
 make_libdeflate:
 	cd libdeflate && make CC=$(CC)
@@ -27,7 +28,7 @@ build/.:
 build/%/.:
 	mkdir -p $@
 
-build/dk_extractor.o: src/dk_extractor.cpp | $$(@D)/.
+build/dk_extractor.o: src/dk_extractor.cpp | build/.
 	$(CXX) $(CXXFLAGS) -o $@ -c src/dk_extractor.cpp
 
 dk64_rom.o: $(DK64_DIR)/dk64_rom.cpp
