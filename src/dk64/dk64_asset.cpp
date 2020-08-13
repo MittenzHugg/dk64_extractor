@@ -73,8 +73,12 @@ void dk64_asset::_decomp_method() const {
 		throw "Asset reference.";
 		return;
 	}	
+	if (_comp_buffer->size() == 0x0A){
+		throw "File too small.";
+		return;
+	}
 	if (_comp_buffer->get<u64>() == 0x1F8B080000000000 && _comp_buffer->get<u16>(8) != 0x0203){
-		throw "Unknown File Header.";
+		throw "Unknown file header.";
 		return;
 	}
 

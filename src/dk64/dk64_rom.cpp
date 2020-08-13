@@ -77,20 +77,22 @@ void dk64_rom::_write_bin(std::string str, dk64_asset* asset){
 		std::stringstream stream;
 		stream << std::setfill ('0') << std::setw(8) << std::hex << &asset->compress()[0] -_buffer;
 		std::string bin_str = str + stream.str() + ".bin";
-		//std::cout << bin_str << std::endl;
-		std::fstream of(bin_str, std::ios::out | std::ios::binary);
 	try{
 		asset->decompress();
+		std::fstream of(bin_str, std::ios::out | std::ios::binary);
 		of.write((char*) &(asset->decompress())[0], asset->decompress().size());
+		of.close();
 	}
 	catch (char const* s){
-		std::cout << "Error: " << bin_str << ": " << s 
-			<< " Exporting compressed bin" << std::endl;
-		of.close();
-		of.open(str + stream.str() + ".raw.bin");
-		of.write((char*) &(asset->compress())[0], asset->compress().size());
+		std::cout << "Error: " << bin_str << ": " << s;
+		if(asset->compress().size() > 0){
+			std::cout << " Exporting compressed bin" << std::endl;
+			std::fstream of(str + stream.str() + ".raw.bin", std::ios::out | std::ios::binary);
+			of.write((char*) &(asset->compress())[0], asset->compress().size());
+			of.close();
+		}
 	}
-	of.close();
+	
 };
 
 void dk64_rom::export_files(char* export_path){
@@ -108,7 +110,9 @@ void dk64_rom::export_files(char* export_path){
 	_write_bin(x_path + "/exp_pak_pic.", _exp_pak_pic_span);
 
 	std::cout << "Exporting asm ..." << std::endl;
-	std::cout << "ASM COMING SOON" << std::endl;
+	std::cout << "Coming Soon" << std::endl;
+	fs::create_directory(x_path + "/asm");
+
 
 	std::cout << "Exporting assets ..." << std::endl;
 	std::string asset_path = std::string(export_path) + "/assets";
