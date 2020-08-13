@@ -72,11 +72,10 @@ void dk64_rom::_write_bin(std::string str, const n64_span& span){
 	of.close();
 };
 
-void dk64_rom::_write_bin(std::string str, dk64_asset* asset){
-	
+void dk64_rom::_write_bin(std::string str, dk64_asset* asset, std::string ext_str){
 		std::stringstream stream;
 		stream << std::setfill ('0') << std::setw(8) << std::hex << &asset->compress()[0] -_buffer;
-		std::string bin_str = str + stream.str() + ".bin";
+		std::string bin_str = str + stream.str() + ext_str + ".bin";
 	try{
 		asset->decompress();
 		std::fstream of(bin_str, std::ios::out | std::ios::binary);
@@ -112,6 +111,13 @@ void dk64_rom::export_files(char* export_path){
 	std::cout << "Exporting asm ..." << std::endl;
 	std::cout << "Coming Soon" << std::endl;
 	fs::create_directory(x_path + "/asm");
+	std::for_each(_asm_code.begin(), _asm_code.end(),
+		[&](dk64_asset*x)->void{ _write_bin(x_path + "/asm/", x,".s"); }
+	);
+
+	std::for_each(_asm_data.begin(), _asm_data.end(),
+		[&](dk64_asset*x)->void{ _write_bin(x_path + "/asm/", x,".d"); }
+	);
 
 
 	std::cout << "Exporting assets ..." << std::endl;
@@ -130,7 +136,6 @@ void dk64_rom::export_files(char* export_path){
 				}
 			);
 		}
-
 	}
 	
 	
@@ -152,40 +157,53 @@ void dk64_rom::_init(void)
 
 
 	///*	-Assets and Assembly -
-	//	113F0 - Globals Assembly Code
-	_global_asm_span = buffer.slice(0x113F0, 0xC29D4 - 0x113F0);
-	_global_asm_data = buffer.slice(0xC29D4, 0xCBE70 - 0xC29D4);
+	std::cout << "Finding asm..." << std::endl;
+	u32 tmp = 0;
+	// Globals Assembly Code
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0x113F0, buffer.slice(0x113F0, 0xC29D4 - 0x113F0)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xC29D4, buffer.slice(0xC29D4, 0xCBE70 - 0xC29D4)));
+
+	// Affects OKAY!, Main Menu(DONKEY KONG!), and shops
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xCBE70, buffer.slice(0xCBE70, 0xD4554 - 0xCBE70)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xD4554, buffer.slice(0xD4554, 0xD4B00 - 0xD4554)));
+
+	//Multiplayer Mode
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xD4B00, buffer.slice(0xD4B00, 0xD69F8 - 0xD4B00)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xD69F8, buffer.slice(0xD69F8, 0xD6B00 - 0xD69F8)));
+
+	//Mincarts
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xD6B00, buffer.slice(0xD6B00, 0xD98A0 - 0xD6B00)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xD98A0, buffer.slice(0xD98A0, 0xD9A40 - 0xD98A0)));
+
+	//Rambi / Enguarde arena / Minigames
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xD9A40, buffer.slice(0xD9A40, 0xDF346 - 0xD9A40)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xDF346, buffer.slice(0xDF346, 0xDF600 - 0xDF346)));
+
+	//Slide / Car / Boat Race
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xDF600, buffer.slice(0xDF600, 0xE649A - 0xDF600)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xE649A, buffer.slice(0xE649A, 0xE6780 - 0xE649A)));
+
+	//Training Barrels, Tag Barrels, DK RAP
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xE6780, buffer.slice(0xE6780, 0xE9D17 - 0xE6780)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xE9D17, buffer.slice(0xE9D17, 0xEA0B0 - 0xE9D17)));
+
+	//Boss
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xEA0B0, buffer.slice(0xEA0B0, 0xF388F - 0xEA0B0)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xF388F, buffer.slice(0xF388F, 0xF41A0 - 0xF388F)));
 	
-	//	C29D4 - Globals Assets
+	//DK Arcade
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xF41A0, buffer.slice(0xF41A0, 0xFB42C - 0xF41A0)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0xFB42C, buffer.slice(0xFB42C, 0xFD2F0 - 0xFB42C)));
+	
+	//Jetpac
+	_asm_code.push_back(new dk64_asset(0xDEADBEEF, tmp, 0xFD2F0, buffer.slice(0xFD2F0, 0x1010FD - 0xFD2F0)));
+	_asm_data.push_back(new dk64_asset(0xDEADBEEF, tmp++, 0x1010FD, buffer.slice(0x1010FD, 0x101C50 - 0x1010FD)));
 
 
-	//	CBE70 - Assembly Code(Affects OKAY!, Main Menu(DONKEY KONG!), and shops)
-	//	D4554 - Asset File(Affects OKAY!, Main Menu(DONKEY KONG!), and shops)
-	//	D4B00 - Assembly Code(Multiplayer Mode)
-	//	D69F8 - Asset File(Multiplayer Mode)
-	//	D6B00 - Assembly Code(Minecart Rides)
-	//	D98A0 - Asset File(MineCart Rides)
-	//	D9A40 - Assembly Code(Rambi / Enguarde arena / Minigames)
-	//	DF346 - Asset File(Rambi / Enguarde arena / Minigames)
-	//	DF600 - Assembly Code(Slide / Car / Boat Race)
-	//	E649A - Asset File(Slide / Car / Boat Race)
-	//	E6780 - Assembly Code(Training Barrels, Tag Barrels, DK RAP)
-	//	E9D17 - Asset File(Training Barrels, Tag Barrels, DK RAP)
-	//	EA0B0 - Assembly Code(Boss)
-	//	F388F - Asset File(Boss)
-	//	F41A0 - Assembly Code(DK ARCADE Minigame)
-	//	FB42C - Asset File(DK ARCADE Minigame)
-	//	FD2F0 - Assembly Code(JETPAC Minigame)
-	//	1010FD - Asset File(JETPAC Minigame)*/
 	///*-Main Pointer Table -
 	//	Initial Address : 0x101C50*/
 	std::cout << "Finding assets..." << std::endl;
 	_asset_table = buffer.slice(0x101C50, buffer.size() - 0x101C50);
 	_assets = dk64_asset_section::parse(_asset_table);
 	std::cout << std::dec << _assets.size() << " assets found" << std::endl;
-	//_assets = 
-	///*Textures for Test Map(how is size determined from ROM ? )
-	//	119363C
-	//	1193A6E - Test Wall Pallete
-	//	1193AA4 - Test Map Floor*/
 }

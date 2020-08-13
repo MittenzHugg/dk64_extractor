@@ -40,16 +40,17 @@ private:
 	void _init(void);
 
 	void _write_bin(std::string str, const n64_span& span);
-	void _write_bin(std::string str, dk64_asset* asset);
+	
+	void _write_bin(std::string str, dk64_asset* asset, std::string ext_str);
+	void _write_bin(std::string str, dk64_asset* asset){_write_bin(str, asset, "");};
 
 	n64_span _bootcode_span;
 
 	n64_span _exp_pak_pic_span;
 
-	n64_span _global_asm_span;
-	n64_span _global_asm_data;
-
 	n64_span _asset_table;
 	std::vector<dk64_asset*> _assets = {};
+	std::vector<dk64_asset*> _asm_code = {};
+	std::vector<dk64_asset*> _asm_data = {};
 };
 
